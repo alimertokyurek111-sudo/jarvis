@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>J.JARVIS — Sesli Asistan</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Manrope:wght@400;500;600;700&display=swap');
+
+:root{
+  --bg-deep:#05080c;
+  --bg-panel:#0b131a;
+  --bg-panel-2:#0f1a22;
+  --line:#1c2b34;
+  --cyan:#4fd8ff;
+  --cyan-dim:#1a5a73;
+  --amber:#ffb454;
+  --green:#43e0a0;
+  --red:#ff6b6b;
+  --text:#dcefff;
+  --text-dim:#7d97a6;
+  --font-hud:'JetBrains Mono', monospace;
+  --font-body:'Manrope', sans-serif;
+}
+
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%;}
+body{
+  background:
+    radial-gradient(ellipse at 50% 0%, #0d1922 0%, var(--bg-deep) 55%),
+    var(--bg-deep);
+  color:var(--text);
+  font-family:var(--font-body);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* subtle scanline / grid texture */
+body::before{
+  content:"";
+  position:fixed; inset:0;
+  background-image:
+    linear-gradient(rgba(79,216,255,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79,216,255,0.035) 1px, transparent 1px);
+  background-size: 42px 42px;
+  pointer-events:none;
+  z-index:0;
+}
+
+.app{
+  position:relative; z-index:1;
+  max-width:1180px; margin:0 auto;
+  padding:22px 20px 40px;
+  display:none; flex-direction:column; gap:18px;
+  min-height:100vh;
+}
+
+/* ---------- AUTH OVERLAY ---------- */
+.auth-overlay{
+  position:fixed; inset:0; z-index:50;
+  display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(ellipse at 50% 0%, #0d1922 0%, var(--bg-deep) 55%), var(--bg-deep);
+  padding:20px;
+}
+.auth-box{
+  width:100%; max-width:340px;
+  background:linear-gradient(180deg, var(--bg-panel), var(--bg-panel-2));
+  border:1px solid var(--line); border-radius:12px;
+  padding:32px 26px; text-align:center;
+}
+.auth-box h2{
+  font-family:var(--font-hud); font-size:16px; letter-spacing:2px;
+  color:var(--text); margin-bottom:20px;
+}
+.auth-box form{display:flex; flex-direction:column; gap:10px;}
+.auth-box input{
+  background:var(--bg-deep); border:1px solid var(--line); border-radius:7px;
+  color:var(--text); padding:11px 13px; font-family:var(--font-body); font-size:14px;
+}
+.auth-box input:focus{outline:none; border-color:var(--cyan-dim);}
+.auth-box button[type="submit"]{
+  background:var(--cyan); color:#04141c; border:none; border-radius:7px;
+  padding:11px; font-family:var(--font-hud); font-size:12px; letter-spacing:1.5px;
+  font-weight:700; cursor:pointer; margin-top:4px;
+}
+.auth-box button[type="submit"]:hover{background:#7ee6ff;}
+.auth-box button[type="submit"]:disabled{opacity:0.5; cursor:default;}
+.auth-toggle{
+  background:none; border:none; color:var(--text-dim); font-size:12px;
+  margin-top:16px; cursor:pointer; text-decoration:underline;
+}
+.auth-toggle:hover{color:var(--cyan);}
+.auth-error{color:var(--red); font-size:12px; min-height:16px; text-align:left;}
+
+/* ---------- HEADER ---------- */
+header{
+  display:flex; align-items:center; justify-content:space-between;
+  border-bottom:1px solid var(--line);
+  padding-bottom:14px;
+  flex-wrap:wrap; gap:12px;
+}
+.brand{display:flex; align-items:center; gap:12px;}
+.brand-mark{
+  width:34px; height:34px; border-radius:50%;
+  border:2px solid var(--cyan);
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 0 14px rgba(79,216,255,0.55), inset 0 0 8px rgba(79,216,255,0.4);
+  font-family:var(--font-hud); font-weight:700; color:var(--cyan); font-size:13px;
+  animation:corePulse 3s ease-in-out infinite;
+}
+@keyframes corePulse{
+  0%,100%{box-shadow:0 0 14px rgba(79,216,255,0.45), inset 0 0 8px rgba(79,216,255,0.3);}
+  50%{box-shadow:0 0 22px rgba(79,216,255,0.85), inset 0 0 12px rgba(79,216,255,0.6);}
+}
+.brand-text h1{
+  font-family:var(--font-hud); font-size:15px; letter-spacing:4px; font-weight:700;
+  color:var(--text);
+}
+.brand-text p{font-size:11px; color:var(--text-dim); letter-spacing:2px; margin-top:2px;}
+
+.status-cluster{display:flex; align-items:center; gap:18px; font-family:var(--font-hud); font-size:11px;}
+#logoutBtn{
+  background:transparent; border:1px solid var(--line); color:var(--text-dim);
+  font-family:var(--font-hud); font-size:10px; letter-spacing:1.5px;
+  padding:5px 10px; border-radius:6px; cursor:pointer;
+}
+#logoutBtn:hover{border-color:var(--red); color:var(--red);}
+.status-item{display:flex; align-items:center; gap:7px; color:var(--text-dim); letter-spacing:1px;}
+.dot{width:7px; height:7px; border-radius:50%; background:var(--text-dim);}
+.dot.on{background:var(--green); box-shadow:0 0 8px var(--green);}
+.dot.listening{background:var(--amber); box-shadow:0 0 8px var(--amber); animation:blink 1s infinite;}
+@keyframes blink{50%{opacity:0.35;}}
+#clock{color:var(--cyan);}
+
+/* ---------- MAIN GRID ---------- */
+main{
+  display:grid;
+  grid-template-columns: 200px 1fr 260px;
+  gap:18px;
+  align-items:start;
+}
+@media (max-width:880px){
+  main{grid-template-columns:1fr;}
+  .side-left{order:3;}
+  .side-right{order:2;}
+}
+@media (max-width:520px){
+  .app{padding:14px 12px 28px; gap:14px;}
+  header{padding-bottom:10px;}
+  .brand-mark{width:28px; height:28px; font-size:11px;}
+  .brand-text h1{font-size:12px; letter-spacing:2px;}
+  .brand-text p{font-size:8.5px; letter-spacing:1px;}
+  .status-cluster{gap:8px 14px; font-size:9px;}
+  .panel{padding:11px;}
+  .orb-stage{width:180px; height:180px;}
+  .orb-core{width:84px; height:84px;}
+  .orb-core svg{width:28px; height:28px;}
+  .state-label{font-size:10px; letter-spacing:2px;}
+  .transcript-box{font-size:13px; padding:10px 12px;}
+  .input-row input{font-size:16px; padding:11px 12px;}
+  .input-row button{font-size:10px; padding:0 12px;}
+  .log{max-height:220px;}
+  footer{font-size:8.5px; line-height:1.6;}
+}
+
+.panel{
+  background:linear-gradient(180deg, var(--bg-panel), var(--bg-panel-2));
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:14px;
+}
+.panel h3{
+  font-family:var(--font-hud); font-size:10px; letter-spacing:2px;
+  color:var(--text-dim); margin-bottom:10px; text-transform:uppercase;
+}
+
+/* quick commands */
+.chip{
+  display:block; width:100%; text-align:left;
+  background:transparent; border:1px solid var(--line); color:var(--text);
+  font-family:var(--font-body); font-size:12.5px;
+  padding:9px 10px; border-radius:7px; margin-bottom:8px; cursor:pointer;
+  transition:border-color .15s, background .15s;
+}
+.chip:hover{border-color:var(--cyan-dim); background:rgba(79,216,255,0.06);}
+
+/* ---------- CORE / ORB ---------- */
+.core-wrap{
+  display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+  gap:16px; padding:10px 6px 4px;
+}
+.orb-stage{position:relative; width:230px; height:230px;}
+canvas#ring{position:absolute; inset:0; width:100%; height:100%;}
+.orb-core{
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  width:104px; height:104px; border-radius:50%;
+  background:radial-gradient(circle at 40% 35%, #163646, #06131a 70%);
+  border:1px solid var(--cyan-dim);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; user-select:none;
+  box-shadow:0 0 30px rgba(79,216,255,0.25);
+  transition:box-shadow .12s, transform .12s;
+}
+.orb-core.active{box-shadow:0 0 55px rgba(79,216,255,0.55);}
+.orb-core svg{width:34px; height:34px; fill:var(--cyan);}
+.orb-core.active svg{fill:var(--amber);}
+
+.state-label{
+  font-family:var(--font-hud); font-size:11px; letter-spacing:3px; color:var(--text-dim);
+  text-transform:uppercase;
+}
+.state-label.active{color:var(--amber);}
+
+.transcript-box{
+  width:100%; min-height:70px;
+  border:1px solid var(--line); border-radius:8px;
+  padding:12px 14px; font-size:14px; color:var(--text);
+  background:rgba(79,216,255,0.03);
+  line-height:1.5;
+}
+.transcript-box .who{
+  font-family:var(--font-hud); font-size:10px; letter-spacing:2px; color:var(--cyan); display:block; margin-bottom:4px;
+}
+
+/* input row */
+.input-row{display:flex; gap:8px; width:100%;}
+.input-row input{
+  flex:1; background:var(--bg-deep); border:1px solid var(--line); border-radius:7px;
+  color:var(--text); padding:10px 12px; font-family:var(--font-body); font-size:13px;
+}
+.input-row input:focus{outline:none; border-color:var(--cyan-dim);}
+.input-row button{
+  background:var(--cyan); color:#04141c; border:none; border-radius:7px;
+  padding:0 16px; font-family:var(--font-hud); font-size:11px; letter-spacing:1px;
+  font-weight:700; cursor:pointer;
+}
+.input-row button:hover{background:#7ee6ff;}
+
+/* notes list */
+.notes-list{
+  display:flex; flex-direction:column; gap:8px;
+  max-height:180px; overflow-y:auto; padding-right:4px;
+}
+.notes-list::-webkit-scrollbar{width:5px;}
+.notes-list::-webkit-scrollbar-thumb{background:var(--line); border-radius:4px;}
+.note-row{
+  display:flex; align-items:flex-start; gap:8px;
+  font-size:12px; line-height:1.4; color:var(--text);
+  border-left:2px solid var(--cyan-dim); padding-left:9px;
+}
+.note-row .note-text{flex:1;}
+.note-empty{font-size:11.5px; color:var(--text-dim);}
+.share-btn{
+  background:transparent; border:1px solid var(--line); border-radius:5px;
+  color:var(--cyan); cursor:pointer; font-size:11px; padding:3px 7px; flex-shrink:0;
+  font-family:var(--font-hud);
+}
+.share-btn:hover{border-color:var(--cyan);}
+
+/* log */
+.log{
+  display:flex; flex-direction:column; gap:10px;
+  max-height:420px; overflow-y:auto; padding-right:4px;
+}
+.log::-webkit-scrollbar{width:5px;}
+.log::-webkit-scrollbar-thumb{background:var(--line); border-radius:4px;}
+.log-entry{font-size:12px; line-height:1.45; border-left:2px solid var(--line); padding-left:9px;}
+.log-entry.user{border-color:var(--text-dim); color:var(--text-dim);}
+.log-entry.ai{border-color:var(--cyan); color:var(--text);}
+.log-entry .tag{font-family:var(--font-hud); font-size:9px; letter-spacing:1.5px; opacity:0.7; display:block; margin-bottom:2px;}
+
+footer{
+  border-top:1px solid var(--line); padding-top:12px;
+  font-family:var(--font-hud); font-size:10px; color:var(--text-dim); letter-spacing:1px;
+  text-align:center;
+}
+footer a{color:var(--cyan); text-decoration:none;}
+</style>
+</head>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<body>
+
+<div id="authOverlay" class="auth-overlay">
+  <div class="auth-box">
+    <div class="brand-mark" style="margin:0 auto 14px;">J</div>
+    <h2 id="authTitle">Giriş Yap</h2>
+    <form id="authForm">
+      <input type="email" id="authEmail" placeholder="E-posta" required autocomplete="email">
+      <input type="password" id="authPass" placeholder="Şifre (en az 6 karakter)" required minlength="6" autocomplete="current-password">
+      <div class="auth-error" id="authError"></div>
+      <button type="submit" id="authSubmitBtn">GİRİŞ YAP</button>
+    </form>
+    <button type="button" id="authToggleBtn" class="auth-toggle">Hesabın yok mu? Kayıt ol</button>
+  </div>
+</div>
+
+<div class="app">
+
+  <header>
+    <div class="brand">
+      <div class="brand-mark">J</div>
+      <div class="brand-text">
+        <h1>J.A.R.V.I.S.</h1>
+        <p>SESLİ YAPAY ZEKA ARAYÜZÜ — TR</p>
+      </div>
+    </div>
+    <div class="status-cluster">
+      <div class="status-item"><span class="dot" id="dotMic"></span><span id="micStatus">MİKROFON BEKLİYOR</span></div>
+      <div class="status-item"><span class="dot" id="dotSync"></span><span id="syncStatus">SENKRON KONTROL EDİLİYOR</span></div>
+      <div class="status-item" id="clock">--:--:--</div>
+      <button id="logoutBtn" title="Çıkış yap, başka bir kodla giriş yapmak için">ÇIKIŞ</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- LEFT: quick commands -->
+    <div class="panel side-left">
+      <h3>Hızlı Komutlar</h3>
+      <button class="chip" data-cmd="saat kaç">Saat kaç?</button>
+      <button class="chip" data-cmd="bugün tarih ne">Tarih ne?</button>
+      <button class="chip" data-cmd="notlarımı göster">Notlarımı göster</button>
+      <button class="chip" data-cmd="notları temizle">Notları temizle</button>
+      <button class="chip" data-cmd="logu temizle">Kaydı temizle</button>
+      <h3 style="margin-top:16px;">Örnek Cümleler</h3>
+      <div style="font-size:11.5px; color:var(--text-dim); line-height:1.6;">
+        "not al: markete git"<br>
+        "3 dakika sayaç kur"<br>
+        "12 çarpı 8 kaç eder"<br>
+        "hava durumu nasıl"<br>
+        "instagram aç"<br>
+        "wikipedia'da uzay ara"<br>
+        "zar at" / "yazı tura"<br>
+        "bana bir şaka yap"<br>
+        "sesi kapat" / "tekrarla"<br>
+        "cihaza bağlan"<br>
+        "pil seviyesi"<br>
+        "rehbere ekle: Ahmet 05321234567"<br>
+        "ahmet'i ara"
+      </div>
+    </div>
+
+    <!-- CENTER: orb + transcript -->
+    <div class="panel core-wrap">
+      <div class="orb-stage">
+        <canvas id="ring" width="230" height="230"></canvas>
+        <div class="orb-core" id="orbCore" title="Dinlemeyi başlat/durdur">
+          <svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>
+        </div>
+      </div>
+      <div class="state-label" id="stateLabel">BEKLEMEDE — ORBA TIKLA</div>
+
+      <div class="transcript-box" id="transcriptBox">
+        <span class="who">JARVIS</span>
+        Merhaba. Ben buradayım. Orba tıkla ve konuş, ya da aşağıya yazarak komut ver.
+      </div>
+
+      <div class="input-row">
+        <input type="text" id="textInput" placeholder="Komut yaz veya soru sor...">
+        <button id="sendBtn">GÖNDER</button>
+      </div>
+    </div>
+
+    <!-- RIGHT: notes + log -->
+    <div class="panel side-right">
+      <h3>Notların</h3>
+      <div class="notes-list" id="notesList"></div>
+      <h3 style="margin-top:16px;">Etkileşim Kaydı</h3>
+      <div class="log" id="log"></div>
+    </div>
+  </main>
+
+  <footer>
+    Ses tanıma Chrome / Edge tarayıcılarında çalışır · Mikrofon izni gerektirir · <span id="timerLine"></span>
+  </footer>
+</div>
+
+<script>
+// ---------------- STATE ----------------
+let listening = false;
+let recognition = null;
+let notes = [];
+let history = []; // {role, content} for Claude context
+let ttsEnabled = true;
+let lastAiText = '';
+const NOTES_KEY = 'jarvis-notes-v1';
+
+const orbCore = document.getElementById('orbCore');
+const stateLabel = document.getElementById('stateLabel');
+const transcriptBox = document.getElementById('transcriptBox');
+const logEl = document.getElementById('log');
+const dotMic = document.getElementById('dotMic');
+const micStatus = document.getElementById('micStatus');
+const textInput = document.getElementById('textInput');
+const sendBtn = document.getElementById('sendBtn');
+const ringCanvas = document.getElementById('ring');
+const ringCtx = ringCanvas.getContext('2d');
+const timerLine = document.getElementById('timerLine');
+
+// ---------------- CLOCK ----------------
+function tickClock(){
+  const d = new Date();
+  document.getElementById('clock').textContent = d.toLocaleTimeString('tr-TR');
+}
+setInterval(tickClock, 1000); tickClock();
+
+// ---------------- FIREBASE (CİHAZLAR ARASI SENKRON) ----------------
+// AŞAĞIYA KENDİ FIREBASE PROJENİN BİLGİLERİNİ YAPIŞTIR.
+// Nasıl alacağını README-hosting.md dosyasında adım adım anlattım.
+const firebaseConfig = {
+  apiKey: "AIzaSyCQpoqTIwXR1aVbexjWa70XzIFnOAUNjN0",
+  authDomain: "jarvis-asistan-6fe51.firebaseapp.com",
+  databaseURL: "https://jarvis-asistan-6fe51-default-rtdb.firebaseio.com",
+  projectId: "jarvis-asistan-6fe51",
+  storageBucket: "jarvis-asistan-6fe51.firebasestorage.app",
+  messagingSenderId: "336683185570",
+  appId: "1:336683185570:web:e4d417c6b6c7fd07a62efb"
+};
+
+// ---------------- KULLANICI GİRİŞİ (e-posta + şifre) ----------------
+// Bunu kendi e-postanla değiştir - "admin" olarak sadece bu e-posta ile
+// giriş yapan kişi "kullanıcıları göster" diyerek kayıtlı herkesi görebilir.
+const ADMIN_EMAIL = 'alimertokyurek111@gmail.com';
+
+let notesRef = null;
+let rehberRef = null;
+let rehber = [];
+let firebaseHazir = false;
+let mevcutKullanici = null;
+
+try{
+  if(firebaseConfig.apiKey && firebaseConfig.apiKey.length > 5){
+    firebase.initializeApp(firebaseConfig);
+    firebaseHazir = true;
+  }
+}catch(e){ console.warn('Firebase başlatılamadı', e); }
+
+function veriYollariniKur(uid){
+  const YOL = 'jarvis-kullanicilar/' + uid + '/';
+  notesRef = firebase.database().ref(YOL + 'notes');
+  rehberRef = firebase.database().ref(YOL + 'rehber');
+}
+
+// ---------------- REHBER (isim + numara, senkron) ----------------
+async function loadRehber(){
+  if(!firebaseHazir){
+    try{ rehber = JSON.parse(localStorage.getItem('jarvis-rehber-local') || '[]'); }catch(e){ rehber = []; }
+    return;
+  }
+  return new Promise((resolve) => {
+    rehberRef.once('value', snap => {
+      rehber = snap.val() || [];
+      resolve();
+    }, () => { rehber = []; resolve(); });
+  });
+}
+async function saveRehber(){
+  if(!firebaseHazir){
+    localStorage.setItem('jarvis-rehber-local', JSON.stringify(rehber));
+    return;
+  }
+  try{ await rehberRef.set(rehber); }
+  catch(e){ console.error('rehber kaydedilemedi', e); }
+}
+
+// ---------------- NOTES (senkron ya da yerel yedek) ----------------
+async function loadNotes(){
+  if(!firebaseHazir){
+    try{ notes = JSON.parse(localStorage.getItem('jarvis-notes-local') || '[]'); }catch(e){ notes = []; }
+    return;
+  }
+  return new Promise((resolve) => {
+    notesRef.once('value', snap => {
+      notes = snap.val() || [];
+      resolve();
+    }, () => { notes = []; resolve(); });
+  });
+}
+async function saveNotes(){
+  if(!firebaseHazir){
+    localStorage.setItem('jarvis-notes-local', JSON.stringify(notes));
+  } else {
+    try{ await notesRef.set(notes); }
+    catch(e){ console.error('not kaydedilemedi', e); }
+  }
+  renderNotesList();
+}
+
+// ---------------- NOT LİSTESİ + PAYLAŞ ----------------
+function renderNotesList(){
+  const el = document.getElementById('notesList');
+  if(!el) return;
+  if(!notes || notes.length === 0){
+    el.innerHTML = '<div class="note-empty">Henüz not yok. "not al: ..." de.</div>';
+    return;
+  }
+  el.innerHTML = notes.map((n, i) => `
+    <div class="note-row">
+      <span class="note-text">${escapeHtml(n.text)}</span>
+      <button class="share-btn" data-i="${i}">Paylaş</button>
+    </div>
+  `).join('');
+  el.querySelectorAll('.share-btn').forEach(btn => {
+    btn.addEventListener('click', () => paylasNot(parseInt(btn.dataset.i)));
+  });
+}
+
+async function paylasNot(i){
+  const not = notes[i];
+  if(!not) return;
+  const metin = not.text;
+  if(navigator.share){
+    try{ await navigator.share({ text: metin, title: 'JARVIS Not' }); }
+    catch(e){ /* kullanıcı paylaşımı iptal etti, sorun değil */ }
+  } else if(navigator.clipboard){
+    try{
+      await navigator.clipboard.writeText(metin);
+      respond('Notu panoya kopyaladım: ' + metin);
+    }catch(e){
+      respond('Kopyalayamadım, tarayıcı izin vermedi.');
+    }
+  } else {
+    respond('Bu tarayıcı paylaşım/kopyalamayı desteklemiyor.');
+  }
+}
+
+async function verileriBaslat(){
+  await Promise.all([loadNotes(), loadRehber()]);
+  renderNotesList();
+  karsilamaYap();
+  const dotSync = document.getElementById('dotSync');
+  const syncStatus = document.getElementById('syncStatus');
+  if(firebaseHazir){
+    dotSync.classList.add('on');
+    syncStatus.textContent = 'GİRİŞ YAPILDI: ' + (mevcutKullanici ? mevcutKullanici.email : '');
+    notesRef.on('value', snap => {
+      const val = snap.val();
+      if(val) notes = val;
+      renderNotesList();
+    });
+    rehberRef.on('value', snap => {
+      const val = snap.val();
+      if(val) rehber = val;
+    });
+  } else {
+    syncStatus.textContent = 'SENKRON KAPALI (SADECE BU CİHAZ)';
+  }
+}
+
+// ---------------- GİRİŞ / KAYIT ----------------
+const authOverlay = document.getElementById('authOverlay');
+const appEl = document.querySelector('.app');
+const authForm = document.getElementById('authForm');
+const authEmail = document.getElementById('authEmail');
+const authPass = document.getElementById('authPass');
+const authError = document.getElementById('authError');
+const authTitle = document.getElementById('authTitle');
+const authSubmitBtn = document.getElementById('authSubmitBtn');
+const authToggleBtn = document.getElementById('authToggleBtn');
+let authModu = 'giris'; // 'giris' | 'kayit'
+
+function authHataMesaji(kod){
+  const map = {
+    'auth/email-already-in-use': 'Bu e-posta zaten kayıtlı, giriş yapmayı dener misin?',
+    'auth/invalid-email': 'E-posta adresi geçersiz görünüyor.',
+    'auth/weak-password': 'Şifre en az 6 karakter olmalı.',
+    'auth/user-not-found': 'Bu e-postayla kayıtlı bir hesap bulamadım.',
+    'auth/wrong-password': 'Şifre yanlış.',
+    'auth/invalid-credential': 'E-posta veya şifre yanlış.',
+    'auth/too-many-requests': 'Çok fazla deneme yapıldı, biraz bekleyip tekrar dene.'
+  };
+  return map[kod] || 'Bir hata oldu: ' + kod;
+}
+
+authToggleBtn.addEventListener('click', () => {
+  authModu = authModu === 'giris' ? 'kayit' : 'giris';
+  authTitle.textContent = authModu === 'giris' ? 'Giriş Yap' : 'Kayıt Ol';
+  authSubmitBtn.textContent = authModu === 'giris' ? 'GİRİŞ YAP' : 'KAYIT OL';
+  authToggleBtn.textContent = authModu === 'giris' ? 'Hesabın yok mu? Kayıt ol' : 'Zaten hesabın var mı? Giriş yap';
+  authError.textContent = '';
+});
+
+authForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  authError.textContent = '';
+  const email = authEmail.value.trim();
+  const sifre = authPass.value;
+  if(!firebaseHazir){
+    authError.textContent = 'Firebase bağlantısı kurulamadı, sayfayı yenileyip tekrar dener misin?';
+    return;
+  }
+  authSubmitBtn.disabled = true;
+  try{
+    if(authModu === 'kayit'){
+      const cred = await firebase.auth().createUserWithEmailAndPassword(email, sifre);
+      await firebase.database().ref('kullanici-index/' + cred.user.uid).set({
+        email: email,
+        kayitTarihi: new Date().toISOString()
+      });
+    } else {
+      await firebase.auth().signInWithEmailAndPassword(email, sifre);
+    }
+  }catch(err){
+    authError.textContent = authHataMesaji(err.code);
+  }
+  authSubmitBtn.disabled = false;
+});
+
+if(firebaseHazir){
+  firebase.auth().onAuthStateChanged((user) => {
+    if(user){
+      mevcutKullanici = user;
+      veriYollariniKur(user.uid);
+      authOverlay.style.display = 'none';
+      appEl.style.display = 'flex';
+      verileriBaslat();
+    } else {
+      mevcutKullanici = null;
+      authOverlay.style.display = 'flex';
+      appEl.style.display = 'none';
+    }
+  });
+} else {
+  authOverlay.style.display = 'none';
+  appEl.style.display = 'flex';
+}
+
+function cikisYap(){
+  if(firebaseHazir && firebase.auth().currentUser){
+    firebase.auth().signOut();
+  }
+}
+
+async function kullanicilariGoster(){
+  if(!mevcutKullanici || mevcutKullanici.email !== ADMIN_EMAIL){
+    respond('Bu bilgiyi görme yetkin yok.');
+    return;
+  }
+  try{
+    const snap = await firebase.database().ref('kullanici-index').once('value');
+    const veri = snap.val() || {};
+    const liste = Object.values(veri).map(k => k.email);
+    if(liste.length === 0) respond('Henüz kayıtlı kullanıcı yok.');
+    else respond('Kayıtlı kullanıcılar: ' + liste.join(', '));
+  }catch(e){
+    respond('Kullanıcı listesini alamadım: ' + e.message);
+  }
+}
+
+// ---------------- LOG UI ----------------
+function addLog(text, who){
+  const div = document.createElement('div');
+  div.className = 'log-entry ' + (who === 'user' ? 'user' : 'ai');
+  div.innerHTML = '<span class="tag">' + (who === 'user' ? 'SEN' : 'JARVIS') + '</span>' + escapeHtml(text);
+  logEl.prepend(div);
+}
+function setTranscript(text, who){
+  transcriptBox.innerHTML = '<span class="who">' + (who === 'user' ? 'SEN' : 'JARVIS') + '</span>' + escapeHtml(text);
+}
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ---------------- SPEECH SYNTHESIS ----------------
+function speak(text){
+  if(!ttsEnabled) return;
+  if(!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'tr-TR';
+  const voices = window.speechSynthesis.getVoices();
+  const trVoice = voices.find(v => v.lang && v.lang.startsWith('tr'));
+  if(trVoice) u.voice = trVoice;
+  u.rate = 1.02;
+  window.speechSynthesis.speak(u);
+}
+
+// ---------------- MIC VISUAL (pseudo ring — no separate getUserMedia) ----------------
+// NOT: Burada bilerek ayrı bir getUserMedia çağrısı YOK. SpeechRecognition zaten
+// kendi mikrofon erişimini yönetiyor; ikinci bir ses akışı açmaya çalışmak
+// Chrome'da izin isteğinin tekrar tekrar çıkmasına / çakışmaya sebep oluyordu.
+let pseudoLevel = 0;
+function drawRing(){
+  requestAnimationFrame(drawRing);
+  ringCtx.clearRect(0,0,230,230);
+  let level = 0;
+  if(listening){
+    pseudoLevel += (Math.random()*0.5 - 0.2);
+    pseudoLevel = Math.max(0.15, Math.min(1, pseudoLevel));
+    level = pseudoLevel;
+  }
+  const bars = 40;
+  const baseR = 78;
+  for(let i=0;i<bars;i++){
+    const angle = (i / bars) * Math.PI * 2;
+    const amp = listening ? (6 + level * 46 * (0.5 + Math.random()*0.5)) : 4;
+    const r1 = baseR;
+    const r2 = baseR + amp;
+    const x1 = 115 + Math.cos(angle)*r1;
+    const y1 = 115 + Math.sin(angle)*r1;
+    const x2 = 115 + Math.cos(angle)*r2;
+    const y2 = 115 + Math.sin(angle)*r2;
+    ringCtx.strokeStyle = listening ? 'rgba(255,180,84,0.8)' : 'rgba(79,216,255,0.45)';
+    ringCtx.lineWidth = 2;
+    ringCtx.beginPath();
+    ringCtx.moveTo(x1,y1);
+    ringCtx.lineTo(x2,y2);
+    ringCtx.stroke();
+  }
+  // static outer ring
+  ringCtx.strokeStyle = 'rgba(79,216,255,0.25)';
+  ringCtx.lineWidth = 1;
+  ringCtx.beginPath();
+  ringCtx.arc(115,115,102,0,Math.PI*2);
+  ringCtx.stroke();
+}
+
+// ---------------- SPEECH RECOGNITION ----------------
+function initRecognition(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){
+    micStatus.textContent = 'TARAYICI DESTEKLEMİYOR';
+    return null;
+  }
+  const r = new SR();
+  r.lang = 'tr-TR';
+  r.continuous = true;
+  r.interimResults = false;
+  r.onresult = (e) => {
+    const text = e.results[e.results.length-1][0].transcript.trim();
+    if(text) handleInput(text);
+  };
+  r.onerror = (e) => { console.warn('recognition error', e.error); };
+  r.onend = () => { if(listening){ try{ r.start(); }catch(e){} } };
+  return r;
+}
+
+async function toggleListening(){
+  if(!recognition){ recognition = initRecognition(); }
+  if(!recognition){
+    respond('Bu tarayıcı ses tanımayı desteklemiyor. Chrome veya Edge kullanmayı dene, ya da alttaki yazı kutusunu kullan.');
+    return;
+  }
+  if(!listening){
+    listening = true; // onend handler'ının otomatik yeniden başlatması için önce bunu set ediyoruz
+    try{
+      recognition.start();
+      orbCore.classList.add('active');
+      stateLabel.textContent = 'DİNLİYORUM...';
+      stateLabel.classList.add('active');
+      dotMic.classList.add('listening');
+      micStatus.textContent = 'DİNLENİYOR';
+    }catch(e){
+      listening = false;
+      micStatus.textContent = 'MİKROFON BAŞLATILAMADI';
+      respond('Mikrofonu başlatamadım. Sayfayı yenileyip tekrar dener misin?');
+    }
+  } else {
+    listening = false;
+    try{ recognition.stop(); }catch(e){}
+    orbCore.classList.remove('active');
+    stateLabel.textContent = 'BEKLEMEDE — ORBA TIKLA';
+    stateLabel.classList.remove('active');
+    dotMic.classList.remove('listening');
+    micStatus.textContent = 'MİKROFON HAZIR';
+  }
+}
+orbCore.addEventListener('click', toggleListening);
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  if(confirm('Çıkış yapmak istediğine emin misin?')){
+    cikisYap();
+  }
+});
+
+// ---------------- INPUT HANDLING ----------------
+sendBtn.addEventListener('click', () => {
+  const val = textInput.value.trim();
+  if(val){ handleInput(val); textInput.value=''; }
+});
+textInput.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){ sendBtn.click(); }
+});
+document.querySelectorAll('.chip').forEach(btn=>{
+  btn.addEventListener('click', ()=> handleInput(btn.dataset.cmd));
+});
+
+async function handleInput(text){
+  setTranscript(text, 'user');
+  addLog(text, 'user');
+  const handled = await runCommand(text);
+  if(!handled){
+    const reply = await askClaude(text);
+    respond(reply);
+  }
+}
+function respond(text){
+  lastAiText = text;
+  setTranscript(text, 'ai');
+  addLog(text, 'ai');
+  speak(text);
+}
+
+// ---------------- COMMAND ENGINE ----------------
+async function runCommand(raw){
+  const t = raw.toLowerCase().replace(/İ/g,'i');
+
+  if(/saat kaç|saat ne/.test(t)){
+    respond('Saat şu anda ' + new Date().toLocaleTimeString('tr-TR') + '.');
+    return true;
+  }
+  if(/tarih ne|ayın kaçı|bugün.*tarih/.test(t)){
+    respond('Bugün ' + new Date().toLocaleDateString('tr-TR', {weekday:'long', year:'numeric', month:'long', day:'numeric'}) + '.');
+    return true;
+  }
+  if(/^not al[:\s]/.test(t) || /not al[ıi] /.test(t)){
+    const content = raw.replace(/^.*?not al[:\s]*/i, '').trim();
+    if(content){
+      notes.push({text: content, ts: Date.now()});
+      await saveNotes();
+      respond('Not edildi: ' + content);
+    } else {
+      respond('Neyi not almamı istersin?');
+    }
+    return true;
+  }
+  if(/notlar[ıi]m[ıi] göster|notlar[ıi]m nedir|notlar[ıi]m ne/.test(t)){
+    if(notes.length === 0) respond('Kayıtlı notun yok.');
+    else respond('Notların: ' + notes.map((n,i)=> (i+1)+') '+n.text).join(' — '));
+    return true;
+  }
+  if(/notlar[ıi] temizle|notlar[ıi]m[ıi] sil/.test(t)){
+    notes = [];
+    await saveNotes();
+    respond('Tüm notlar silindi.');
+    return true;
+  }
+  if(/logu temizle|kayd[ıi] temizle/.test(t)){
+    logEl.innerHTML = '';
+    respond('Etkileşim kaydı temizlendi.');
+    return true;
+  }
+
+  if(/hava durumu|hava nas[ıi]l/.test(t)){
+    await havaDurumuSoyle();
+    return true;
+  }
+
+  const siteAnahtar = Object.keys(SITELER).find(k => t.includes(k));
+  if(siteAnahtar && /aç/.test(t)){
+    window.open(SITELER[siteAnahtar], '_blank');
+    respond(siteAnahtar.charAt(0).toUpperCase() + siteAnahtar.slice(1) + ' açılıyor.');
+    return true;
+  }
+
+  if(/wikipedia|vikipedi/.test(t)){
+    const q = raw.replace(/wikipedia|vikipedi/gi,'').replace(/['’]?(da|de)\b/gi,'').replace(/ara|aç/gi,'').trim();
+    window.open('https://tr.wikipedia.org/wiki/Special:Search?search=' + encodeURIComponent(q), '_blank');
+    respond('"' + q + '" için Wikipedia\'yı açtım.');
+    return true;
+  }
+
+  if(/zar at/.test(t)){
+    const sonuc = 1 + Math.floor(Math.random()*6);
+    respond('Zar ' + sonuc + ' geldi.');
+    return true;
+  }
+  if(/yazı tura/.test(t)){
+    respond(Math.random() < 0.5 ? 'Yazı geldi.' : 'Tura geldi.');
+    return true;
+  }
+  if(/şaka (yap|anlat)|bir şaka/.test(t)){
+    respond(SAKALAR[Math.floor(Math.random()*SAKALAR.length)]);
+    return true;
+  }
+
+  if(/sesi kapat|beni sustur/.test(t)){
+    ttsEnabled = false;
+    setTranscript('Sesi kapattım. Yazıyla devam edebilirsin.', 'ai');
+    addLog('Sesi kapattım.', 'ai');
+    return true;
+  }
+  if(/sesi aç|art[ıi]k konuş/.test(t)){
+    ttsEnabled = true;
+    respond('Ses açıldı.');
+    return true;
+  }
+  if(/tekrar et|tekrarla|ne dedin/.test(t)){
+    if(lastAiText){ setTranscript(lastAiText,'ai'); speak(lastAiText); }
+    else respond('Henüz bir şey söylemedim.');
+    return true;
+  }
+
+  if(/hesab[ıi]m ne|hangi hesaptay[ıi]m/.test(t)){
+    respond(mevcutKullanici ? ('Şu an ' + mevcutKullanici.email + ' hesabıyla giriş yapmış durumdasın.') : 'Bir hesaba giriş yapılmamış.');
+    return true;
+  }
+  if(/çıkış yap|hesab[ıi] değiştir|hesaptan çık/.test(t)){
+    cikisYap();
+    return true;
+  }
+  if(/kullan[ıi]c[ıi]lar[ıi] göster|kay[ıi]tl[ıi] kullan[ıi]c[ıi]lar/.test(t)){
+    await kullanicilariGoster();
+    return true;
+  }
+
+  if(t.startsWith('rehbere ekle:') || t.startsWith('rehbere ekle ')){
+    const icerik = raw.replace(/^rehbere ekle[:\s]*/i, '').trim();
+    const eslesme = icerik.match(/^(.+?)[\s,:-]+([\d\s()+-]{7,20})$/);
+    if(eslesme){
+      const isim = eslesme[1].trim();
+      const numara = eslesme[2].replace(/\s+/g,'').trim();
+      rehber = rehber.filter(k => k.isim.toLowerCase() !== isim.toLowerCase());
+      rehber.push({ isim, numara });
+      await saveRehber();
+      respond(isim + ' rehbere eklendi.');
+    } else {
+      respond('İsim ve numarayı ayırt edemedim. "rehbere ekle: Ahmet 05321234567" şeklinde söyler misin?');
+    }
+    return true;
+  }
+  if(/rehberi göster|rehberimde kimler var/.test(t)){
+    if(rehber.length === 0) respond('Rehberinde kimse yok.');
+    else respond('Rehberinde şunlar var: ' + rehber.map(k => k.isim).join(', '));
+    return true;
+  }
+  if(t.startsWith('rehberden sil:') || t.startsWith('rehberden sil ')){
+    const isim = raw.replace(/^rehberden sil[:\s]*/i, '').trim();
+    const oncekiUzunluk = rehber.length;
+    rehber = rehber.filter(k => k.isim.toLowerCase() !== isim.toLowerCase());
+    await saveRehber();
+    respond(rehber.length < oncekiUzunluk ? (isim + ' rehberden silindi.') : (isim + ' rehberde bulunamadı.'));
+    return true;
+  }
+  const aramaEslesme = t.match(/(.+)['’](y?i|y?ı|y?u|y?ü)\s+ara$/);
+  if(aramaEslesme){
+    aramaBaslat(aramaEslesme[1].trim());
+    return true;
+  }
+
+  if(/cihaza bağlan|bluetooth.*bağlan|cihaz bağla/.test(t)){
+    await bluetoothBaglan();
+    return true;
+  }
+  if(/pil seviyesi|pilini kontrol|batarya durumu/.test(t)){
+    await pilSeviyesiOku();
+    return true;
+  }
+  if(/bağlant[ıi]y[ıi] kes|cihaz[ıi]?dan ayr[ıi]l/.test(t)){
+    bluetoothBaglantiKes();
+    return true;
+  }
+  const timerMatch = t.match(/(\d+)\s*(saniye|dakika|dk)\s*(say[aı]ç|zamanlay[ıi]c[ıi])/);
+  if(timerMatch){
+    let n = parseInt(timerMatch[1]);
+    const unit = timerMatch[2];
+    const ms = unit.startsWith('s') ? n*1000 : n*60*1000;
+    respond(n + ' ' + (unit.startsWith('s') ? 'saniyelik' : 'dakikalık') + ' sayaç kuruldu.');
+    startTimer(ms, n, unit);
+    return true;
+  }
+  const mathMatch = t.match(/([0-9\.\s\+\-\*\/\(\)%çarp[ıi]böl bölü topla ç[ıi]kar]+)\s*(kaç eder|nedir|hesapla)/) || t.match(/^hesapla[:\s]+(.+)/);
+  if(mathMatch){
+    const expr = normalizeMath(raw);
+    if(expr !== null){
+      respond('Sonuç: ' + expr);
+      return true;
+    }
+  }
+  const searchMatch = t.match(/(?:google['’]?da\s+)?(.+?)\s+(?:ara|arat)$/) ;
+  if(/google['’]?da|google\'da/.test(t) || (searchMatch && /^ara /.test(t)===false && /youtube/.test(t)===false && /google/.test(t))){
+    const q = raw.replace(/google['’]?da/i,'').replace(/ara[t]?$/i,'').trim();
+    window.open('https://www.google.com/search?q=' + encodeURIComponent(q), '_blank');
+    respond('"' + q + '" için Google arattım.');
+    return true;
+  }
+  if(/youtube/.test(t)){
+    const q = raw.replace(/youtube['’]?(da|de|'da|'de)?/i,'').replace(/ara|aç/gi,'').trim();
+    window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(q), '_blank');
+    respond('"' + q + '" için YouTube açtım.');
+    return true;
+  }
+  if(/dinlemeyi (durdur|kapat)|susturur musun|dur jarvis/.test(t)){
+    if(listening) toggleListening();
+    respond('Dinlemeyi durdurdum.');
+    return true;
+  }
+  return false;
+}
+
+const SITELER = {
+  'instagram': 'https://www.instagram.com',
+  'twitter': 'https://twitter.com',
+  'github': 'https://github.com',
+  'gmail': 'https://mail.google.com',
+  'netflix': 'https://www.netflix.com',
+  'spotify': 'https://open.spotify.com',
+  'whatsapp': 'https://web.whatsapp.com',
+  'twitch': 'https://www.twitch.tv',
+  'linkedin': 'https://www.linkedin.com',
+  'reddit': 'https://www.reddit.com'
+};
+
+const SAKALAR = [
+  'Bilgisayar mühendisi neden dışarı çıkmaz? Çünkü bug\'lardan korkar.',
+  'Matematikçi neden hep üzgün? Çünkü problemleri çok.',
+  'İki anten evlenmiş, düğün fena olmuş ama resepsiyon harikaymış.',
+  'Elektrikçi neden sınavdan kaldı? Çünkü direnç gösterdi.',
+  'Bir SQL sorgusu bara girer, iki masaya oturmak ister ama bulamaz.'
+];
+
+function havaKoduAcikla(kod){
+  if(kod === 0) return 'açık ve gökyüzü net';
+  if([1,2,3].includes(kod)) return 'parçalı bulutlu';
+  if([45,48].includes(kod)) return 'sisli';
+  if([51,53,55,56,57].includes(kod)) return 'çisenti var';
+  if([61,63,65,66,67].includes(kod)) return 'yağmurlu';
+  if([71,73,75,77].includes(kod)) return 'karlı';
+  if([80,81,82].includes(kod)) return 'sağanak yağışlı';
+  if([95,96,99].includes(kod)) return 'gök gürültülü fırtına var';
+  return 'belirsiz bir hava durumu';
+}
+
+function konumAl(){
+  return new Promise((resolve, reject) => {
+    if(!navigator.geolocation){ reject('no-geo'); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve(pos.coords),
+      err => reject(err),
+      { timeout: 8000 }
+    );
+  });
+}
+
+function aramaBaslat(isim){
+  const kisi = rehber.find(k =>
+    k.isim.toLowerCase().includes(isim.toLowerCase()) ||
+    isim.toLowerCase().includes(k.isim.toLowerCase())
+  );
+  if(!kisi){
+    respond(isim + ' rehberinde yok. Önce "rehbere ekle: ' + isim + ' numara" diyerek ekler misin?');
+    return;
+  }
+  respond(kisi.isim + ' aranıyor, arama ekranını açıyorum.');
+  window.location.href = 'tel:' + kisi.numara;
+}
+
+async function havaOzeti(){
+  try{
+    const coords = await konumAl();
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&current_weather=true`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const cw = data.current_weather;
+    if(!cw) return null;
+    const aciklama = havaKoduAcikla(cw.weathercode);
+    return `sıcaklık ${Math.round(cw.temperature)} derece, ${aciklama}`;
+  }catch(e){
+    return null;
+  }
+}
+
+async function havaDurumuSoyle(){
+  const ozet = await havaOzeti();
+  if(!ozet){
+    respond('Konumuna erişemediğim için hava durumunu alamadım. Konum iznini kontrol eder misin?');
+    return;
+  }
+  respond('Şu anda ' + ozet + '.');
+}
+
+async function karsilamaYap(){
+  const saat = new Date().getHours();
+  let selam = 'Merhaba';
+  if(saat < 6) selam = 'İyi geceler';
+  else if(saat < 11) selam = 'Günaydın';
+  else if(saat < 18) selam = 'İyi günler';
+  else selam = 'İyi akşamlar';
+
+  let cumle = selam + '.';
+  if(notes.length > 0){
+    cumle += ` ${notes.length} tane notun var, en sonuncusu: ${notes[notes.length-1].text}.`;
+  }
+  respond(cumle);
+}
+
+// ---------------- BLUETOOTH ----------------
+let btDevice = null;
+let btServer = null;
+
+async function bluetoothBaglan(){
+  if(!navigator.bluetooth){
+    respond('Bu tarayıcı Bluetooth\'u desteklemiyor. Bilgisayarda Chrome/Edge, telefonda Android Chrome kullanman gerekiyor - iPhone\'da bu özellik çalışmıyor.');
+    return;
+  }
+  try{
+    respond('Yakındaki cihazları arıyorum, birini seç.');
+    btDevice = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: ['battery_service']
+    });
+    respond(btDevice.name ? (btDevice.name + ' cihazına bağlanıyorum.') : 'Cihaza bağlanıyorum.');
+    btServer = await btDevice.gatt.connect();
+    respond('Bağlandı. Artık "pil seviyesi" diyerek sorabilirsin.');
+  }catch(e){
+    if(e.name === 'NotFoundError'){
+      respond('Hiçbir cihaz seçmedin, bağlantı iptal oldu.');
+    } else {
+      respond('Bağlanamadım: ' + e.message);
+    }
+  }
+}
+
+async function pilSeviyesiOku(){
+  if(!btServer || !btServer.connected){
+    respond('Önce bir cihaza bağlanmam lazım. "Cihaza bağlan" de.');
+    return;
+  }
+  try{
+    const service = await btServer.getPrimaryService('battery_service');
+    const char = await service.getCharacteristic('battery_level');
+    const value = await char.readValue();
+    const yuzde = value.getUint8(0);
+    respond('Pil seviyesi yüzde ' + yuzde + '.');
+  }catch(e){
+    respond('Bu cihaz pil bilgisini bu şekilde paylaşmıyor, standart batarya servisi yok gibi görünüyor.');
+  }
+}
+
+function bluetoothBaglantiKes(){
+  if(btDevice && btDevice.gatt.connected){
+    btDevice.gatt.disconnect();
+    respond('Bağlantı kesildi.');
+  } else {
+    respond('Zaten bağlı bir cihaz yok.');
+  }
+  btServer = null;
+}
+
+function normalizeMath(raw){
+  let s = raw.toLowerCase()
+    .replace(/kaç eder|nedir|hesapla|eşittir|=/g,'')
+    .replace(/çarp[ıi]/g,'*')
+    .replace(/bölü|böl/g,'/')
+    .replace(/topla|art[ıi]/g,'+')
+    .replace(/ç[ıi]kar|eksi/g,'-')
+    .replace(/x/g,'*')
+    .trim();
+  if(!/^[0-9+\-*/(). %]+$/.test(s) || s.length === 0) return null;
+  try{
+    // eslint-disable-next-line no-eval
+    const result = Function('"use strict"; return (' + s + ')')();
+    if(typeof result !== 'number' || isNaN(result)) return null;
+    return result;
+  }catch(e){ return null; }
+}
+
+let activeTimer = null;
+function startTimer(ms, n, unit){
+  if(activeTimer) clearTimeout(activeTimer);
+  const endLabel = n + ' ' + (unit.startsWith('s') ? 'saniye' : 'dakika');
+  let remaining = ms;
+  const interval = setInterval(()=>{
+    remaining -= 1000;
+    if(remaining <= 0){ timerLine.textContent=''; }
+    else { timerLine.textContent = 'Sayaç: ' + Math.ceil(remaining/1000) + 's kaldı (' + endLabel + ')'; }
+  }, 1000);
+  activeTimer = setTimeout(()=>{
+    clearInterval(interval);
+    timerLine.textContent = '';
+    respond('Süre doldu: ' + endLabel + ' geçti.');
+  }, ms);
+}
+
+// ---------------- CLAUDE FALLBACK ----------------
+async function askClaude(userText){
+  history.push({role:'user', content: userText});
+  if(history.length > 12) history = history.slice(-12);
+  try{
+    // NOT: Anahtar burada YOK - Cloudflare Worker'a gidiyor, anahtar orada gizli duruyor.
+    const WORKER_URL = 'https://jarvis-proxy.alimertokyurek111.workers.dev';
+    const response = await fetch(WORKER_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        system:'Sen JARVIS adlı, Türkçe konuşan sesli bir yapay zeka asistanısın. Cevapların sesli okunacak, bu yüzden markdown, yıldız işareti veya liste işaretleri kullanma, düz konuşma dili kullan. Basit sorulara (saat, selamlaşma, kısa fikir) 1-3 cümlede net cevap ver. Ama tarif, nasıl yapılır, adım adım açıklama gibi detay gerektiren bir şey sorulursa çekinme, gerçek bir uzman gibi malzemeleri/adımları sırayla, doğal cümlelerle anlat - kısa kesme, ihtiyaç kadar uzun yaz.',
+        messages: history
+      })
+    });
+    const data = await response.json();
+    console.log('JARVIS worker cevabı:', data);
+    if(data.error){
+      const hataMsg = 'API HATASI: ' + (data.error.message || JSON.stringify(data.error));
+      history.pop();
+      return hataMsg;
+    }
+    const text = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+    const final = text || ('Boş cevap geldi. Ham veri: ' + JSON.stringify(data).slice(0,600));
+    history.push({role:'assistant', content: final});
+    return final;
+  }catch(e){
+    console.error(e);
+    return 'Şu an sohbete bağlanamadım. Sabit komutlar (not, hava durumu, hesaplama, site açma vb.) yine de çalışır.';
+  }
+}
+
+// initial ring draw even when idle
+drawRing();
+</script>
+</body>
+</html>
