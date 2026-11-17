@@ -1807,7 +1807,7 @@ async function akilliCevap(text){
   if(ARAMA_RE.test(text.toLowerCase())){
     setTranscript('İnternette arıyorum...', 'ai');
     const sorgu = text.replace(/^(internette ara|araştır)[:\s]*/i, '');
-    const d = await internetAra(sorgu);
+    console.log("JARVIS ARAMA VERİSİ:", d);
 
     const sonuc = (d && d.sonuclar) || [];
     const sporSonuclari = (d && d.spor) || [];
