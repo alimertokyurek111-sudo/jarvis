@@ -1744,15 +1744,32 @@ async function askClaude(userText, ekstra){
 const ARAMA_RE = /bug[üu]n|d[üu]n\b|bu hafta|bu ay|son dakika|haber|güncel|şu an|şimdi|dolar|euro|sterlin|alt[ıi]n|borsa|bitcoin|maç|skor|kim kazand[ıi]|fiyat|son durum|ne oldu|açıklad[ıi]|seçim|internette ara|araştır/;
 async function internetAra(q){
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
-  try{
-    const r = await fetch(WORKER_URL + '/search?q=' + encodeURIComponent(q), {signal: controller.signal});
-    if(!r.ok) throw new Error('HTTP ' + r.status);
-    return await r.json();
-  }catch(e){
-    console.warn('Güncel veri alınamadı:', e);
+  const timeout = setTimeout(() => controller.abort(), 20000);
+
+  try {
+    const url = WORKER_URL + '/search?q=' + encodeURIComponent(q);
+
+    console.log('[JARVIS] İnternet araması:', url);
+
+    const r = await fetch(url, {
+      method: 'GET',
+      signal: controller.signal,
+      headers: {'Accept': 'application/json'}
+    });
+
+    const raw = await r.text();
+
+    console.log('[JARVIS] Worker HTTP:', r.status);
+    console.log('[JARVIS] Worker cevabı:', raw);
+
+    if (!r.ok) throw new Error('HTTP hatası: ' + r.status);
+
+    return JSON.parse(raw);
+
+  } catch(e) {
+    console.error('[JARVIS] İnternet araması başarısız:', e);
     return null;
-  }finally{
+  } finally {
     clearTimeout(timeout);
   }
 }
