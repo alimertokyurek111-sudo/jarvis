@@ -1812,6 +1812,17 @@ async function akilliCevap(text){
     const sonuc = (d && d.sonuclar) || [];
     const sporSonuclari = (d && d.spor) || [];
     const haberSonuclari = (d && d.haberler) || [];
+    const aramaKelimeleri = sorgu
+  .toLocaleLowerCase('tr-TR')
+  .split(/\s+/)
+  .filter(k => k.length > 2);
+
+const ilgiliHaberler = haberSonuclari.filter(h => {
+  const metin = (h.baslik + ' ' + (h.ozet || ''))
+    .toLocaleLowerCase('tr-TR');
+
+  return aramaKelimeleri.some(k => metin.includes(k));
+});
     const guncelSoru = ARAMA_RE.test(text.toLowerCase());
 
     // Spor sonucu doğrudan güvenilir veri kaynağından geldiyse modeli
@@ -1842,12 +1853,12 @@ async function akilliCevap(text){
               (m.tarih ? ' | ' + m.tarih : '')
             ).join('\n') + '\n'
           : '') +
-        (haberSonuclari.length
-          ? 'HABER RSS SONUÇLARI:\n' +
-            haberSonuclari.slice(0,8).map((x,i) =>
-              (i+1) + ') ' + x.baslik + (x.kaynak ? ' [' + x.kaynak + ']' : '')
-            ).join('\n') + '\n'
-          : '') +
+(ilgiliHaberler.length
+  ? 'HABER RSS SONUÇLARI:\n' +
+    ilgiliHaberler.slice(0,8).map((x,i) =>
+      (i+1) + ') ' + x.baslik + (x.kaynak ? ' [' + x.kaynak + ']' : '')
+    ).join('\n') + '\n'
+  : '') +
         sonuc.map((x, i) =>
           (i+1) + ') ' + x.baslik +
           (x.ozet ? ' — ' + x.ozet : '') +
