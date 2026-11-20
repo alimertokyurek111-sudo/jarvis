@@ -1371,8 +1371,30 @@ function respond(text){
   speak(text);
 }
 
+// ---------------- WHATSAPP MESAJ TASLAGI ----------------
+function whatsappTaslakKomutu(raw){
+  const t = raw.trim();
+  // Güvenilir biçim: "WhatsApp'tan [kişi] mesaj: [metin]"
+  let m = t.match(/^whatsapp(?:\s*['’]?tan)?\s+(.+?)\s+mesaj\s*[:：]\s*(.+)$/i);
+  if(!m) m = t.match(/^(.+?)\s+whatsapp(?:\s*['’]?tan)?\s+mesaj\s*[:：]\s*(.+)$/i);
+  if(!m) return null;
+  const kisi = m[1].trim();
+  const mesaj = m[2].trim();
+  if(!kisi || !mesaj) return null;
+  return {kisi, mesaj};
+}
+function whatsappTaslakAc(kisi, mesaj){
+  // WhatsApp Web yalnızca metni taslak olarak açar; gönderim kullanıcı tarafından yapılır.
+  const url = 'https://web.whatsapp.com/send?text=' + encodeURIComponent(mesaj);
+  window.open(url, '_blank', 'noopener');
+  respond('WhatsApp mesaj taslağını açıyorum. Alıcı: ' + kisi + '. Mesaj: ' + mesaj + '. WhatsApp’ta doğru kişiyi seçip gönder tuşuna sen basmalısın.');
+}
+
+
 // ---------------- COMMAND ENGINE ----------------
 async function runCommand(raw){
+  const wa = whatsappTaslakKomutu(raw);
+  if(wa){ whatsappTaslakAc(wa.kisi, wa.mesaj); return true; }
   const t = raw.toLowerCase().replace(/İ/g,'i');
   if(await ozelKomut(raw, t)) return true;
 
@@ -2648,83 +2670,83 @@ function handDraw(landmarks){
   const w=handCanvas.width=handVideo.videoWidth||640, h=handCanvas.height=handVideo.videoHeight||360;
   const ctx=handCtx, now=performance.now();
   ctx.clearRect(0,0,w,h);
+  // Kamera üzerinde kayan tarama çizgisi
+  const scanY=(now*.075)%(h+80)-40;
+  const scan=ctx.createLinearGradient(0,scanY-22,0,scanY+22);
+  scan.addColorStop(0,'rgba(79,216,255,0)'); scan.addColorStop(.5,'rgba(79,216,255,.13)'); scan.addColorStop(1,'rgba(79,216,255,0)');
+  ctx.fillStyle=scan; ctx.fillRect(0,scanY-22,w,44);
   const hands=landmarks||[];
   if(!hands.length){handTrail=[];return;}
-  const amber='255,164,48', gold='255,210,110';
-  const handCenters=[];
   hands.forEach((pts,handIndex)=>{
+    const px=i=>(1-pts[i].x)*w, py=i=>pts[i].y*h;
     const xs=pts.map(p=>(1-p.x)*w), ys=pts.map(p=>p.y*h);
-    const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
-    const palmX=(1-pts[9].x)*w, palmY=pts[9].y*h;
-    const span=Math.max(maxX-minX,maxY-minY);
-    const r=Math.max(34,span*.43);
-    handCenters.push({x:palmX,y:palmY,r});
-    const pulse=1+Math.sin(now*.003+handIndex*1.7)*.055;
-    ctx.save(); ctx.translate(palmX,palmY);
-    ctx.globalCompositeOperation='lighter';
-    ctx.shadowColor=`rgba(${amber},.75)`; ctx.shadowBlur=15;
-    const mode=handFxName;
-    // Each recognized gesture has a distinct animation; ring-only visuals are avoided.
-    if(mode==='scan'){
-      // Radar fan + moving sweep bar + pulsing scan wave
-      ctx.strokeStyle=`rgba(${amber},.5)`; ctx.lineWidth=1.2;
-      for(let k=1;k<=3;k++){ctx.beginPath();ctx.arc(0,0,r*(.25+k*.22)*pulse,-Math.PI*.82,Math.PI*.82);ctx.stroke();}
-      const angle=now*.0016*(handIndex? -1:1);
-      ctx.fillStyle=`rgba(${gold},.12)`;ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,r*.95,angle,angle+.42);ctx.closePath();ctx.fill();
-      ctx.strokeStyle=`rgba(${gold},.95)`;ctx.lineWidth=2.4;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(angle)*r*.95,Math.sin(angle)*r*.95);ctx.stroke();
-      // Moving scan bars
-      for(let i=0;i<5;i++){const yy=((now*.09+i*r*.4)%(r*1.8))-r*.9;ctx.strokeStyle=`rgba(${amber},${.15+(i%2)*.08})`;ctx.beginPath();ctx.moveTo(-r*.8,yy);ctx.lineTo(r*.8,yy);ctx.stroke();}
-    } else if(mode==='orbit'){
-      // Two opposing elliptical orbital tracks, not a static circle
-      for(let k=0;k<3;k++){ctx.save();ctx.rotate(now*.00065*(k%2?-1:1)+k*1.2);ctx.strokeStyle=`rgba(${k===1?gold:amber},${.55+k*.12})`;ctx.lineWidth=k===1?2:1.3;ctx.beginPath();ctx.ellipse(0,0,r*(.48+k*.16),r*(.2+k*.08),k*.55,0,Math.PI*2);ctx.stroke();
-        const a=now*.0018+k*2.2;const ex=Math.cos(a)*r*(.48+k*.16),ey=Math.sin(a)*r*(.2+k*.08);ctx.fillStyle=`rgba(${gold},.95)`;ctx.beginPath();ctx.arc(ex,ey,3+k,0,Math.PI*2);ctx.fill();ctx.restore();}
-      ctx.setLineDash([5,8]);ctx.lineDashOffset=-now*.05;ctx.strokeStyle=`rgba(${gold},.7)`;ctx.beginPath();ctx.arc(0,0,r*.92,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
-    } else if(mode==='energy'){
-      // Expanding burst spokes and an animated energy core
-      const phase=(now*.002)%1, burstR=r*(.25+phase*.8);
-      ctx.strokeStyle=`rgba(${gold},${1-phase})`;ctx.lineWidth=2.2;ctx.beginPath();ctx.arc(0,0,burstR,0,Math.PI*2);ctx.stroke();
-      for(let i=0;i<24;i++){const a=i*Math.PI/12+now*.0004;const inner=r*(.2+(i%4)*.04),outer=r*(.55+((i*7)%5)*.07);ctx.strokeStyle=`rgba(${amber},${.35+((i%3)*.18)})`;ctx.lineWidth=i%4===0?2.5:1;ctx.beginPath();ctx.moveTo(Math.cos(a)*inner,Math.sin(a)*inner);ctx.lineTo(Math.cos(a)*outer,Math.sin(a)*outer);ctx.stroke();}
-      const core=8+Math.sin(now*.012)*4;ctx.fillStyle=`rgba(${gold},.8)`;ctx.beginPath();ctx.arc(0,0,core,0,Math.PI*2);ctx.fill();
-    } else if(mode==='lock'){
-      // Four closing brackets + crosshair; no concentric circles
-      const close=.55+Math.sin(now*.004)*.12, half=r*close;
-      ctx.strokeStyle=`rgba(${gold},.95)`;ctx.lineWidth=3;ctx.lineCap='round';
-      const L=r*.22; [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(([sx,sy])=>{const x=sx*half,y=sy*half;ctx.beginPath();ctx.moveTo(x-sx*L,y);ctx.lineTo(x,y);ctx.lineTo(x,y-sy*L);ctx.stroke();});
-      ctx.strokeStyle=`rgba(${amber},.65)`;ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(-r*.65,0);ctx.lineTo(-r*.2,0);ctx.moveTo(r*.2,0);ctx.lineTo(r*.65,0);ctx.moveTo(0,-r*.65);ctx.lineTo(0,-r*.2);ctx.moveTo(0,r*.2);ctx.lineTo(0,r*.65);ctx.stroke();
-      ctx.fillStyle=`rgba(${gold},.8)`;ctx.beginPath();ctx.arc(0,0,4+Math.sin(now*.01)*2,0,Math.PI*2);ctx.fill();
-    } else if(mode==='focus'){
-      // Directional beam and offset target brackets
-      const a=-Math.PI/2+Math.sin(now*.001)*.18, beam=r*1.35;
-      ctx.strokeStyle=`rgba(${gold},.85)`;ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(a)*beam,Math.sin(a)*beam);ctx.stroke();
-      ctx.fillStyle=`rgba(${amber},.12)`;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(a-.08)*beam,Math.sin(a-.08)*beam);ctx.lineTo(Math.cos(a+.08)*beam,Math.sin(a+.08)*beam);ctx.closePath();ctx.fill();
-      for(let k=0;k<4;k++){const rot=k*Math.PI/2+a, dist=r*.45;const x=Math.cos(rot)*dist,y=Math.sin(rot)*dist;ctx.strokeStyle=`rgba(${gold},.9)`;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x-Math.cos(rot)*9,y-Math.sin(rot)*9);ctx.lineTo(x+Math.cos(rot)*9,y+Math.sin(rot)*9);ctx.stroke();}
-    }
+    const x=Math.min(...xs), y=Math.min(...ys), ww=Math.max(...xs)-x, hh=Math.max(...ys)-y;
+    const cx=(px(0)+px(5)+px(9)+px(13)+px(17))/5;
+    const cy=(py(0)+py(5)+py(9)+py(13)+py(17))/5;
+    const radius=Math.max(ww,hh)*.58;
+    const hue=handFxName==='energy'?'145,240,190':handFxName==='orbit'?'190,150,255':handFxName==='lock'?'255,190,100':'90,225,255';
+
+    // Avuç içi çevresinde radar halkaları
+    ctx.save(); ctx.translate(cx,cy); ctx.rotate(now*.00055*(handIndex? -1:1));
+    ctx.strokeStyle=`rgba(${hue},.68)`; ctx.lineWidth=Math.max(1.4,w/850);
+    ctx.setLineDash([Math.max(5,w/100),Math.max(5,w/65)]);
+    ctx.beginPath(); ctx.arc(0,0,radius*.72,0,Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]); ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(0,0,radius*.9,now*.001,now*.001+Math.PI*.58); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0,0,radius*.9,now*.001+Math.PI,now*.001+Math.PI*1.42); ctx.stroke();
     ctx.restore();
-    // Subtle palm-centered ripple rings
-    const ripple=(now*.14+handIndex*48)%(r*1.8);
-    ctx.save();ctx.globalCompositeOperation='lighter';ctx.strokeStyle=`rgba(${amber},${Math.max(0,.24*(1-ripple/(r*1.8)))})`;ctx.lineWidth=1.2;
-    ctx.beginPath();ctx.arc(palmX,palmY,r*.25+ripple,0,Math.PI*2);ctx.stroke();ctx.restore();
-    // Short trails around the hologram, not on the finger joints
-    const key='palm-'+handIndex, point={key,x:palmX,y:palmY,t:now};
-    const old=handTrail.find(v=>v.key===key);
-    if(old&&Math.hypot(point.x-old.x,point.y-old.y)>4){
-      ctx.save();ctx.globalCompositeOperation='lighter';ctx.strokeStyle=`rgba(${amber},.22)`;ctx.lineWidth=Math.max(2,r*.045);ctx.lineCap='round';ctx.beginPath();ctx.moveTo(old.x,old.y);ctx.lineTo(point.x,point.y);ctx.stroke();ctx.restore();
+
+    // Köşeli takip çerçevesi
+    const bx=x-24, by=y-24, bw=ww+48, bh=hh+48, corner=Math.min(28,bw*.18,bh*.18);
+    ctx.save(); ctx.strokeStyle=`rgba(${hue},.95)`; ctx.lineWidth=Math.max(2,w/500); ctx.shadowColor=`rgba(${hue},.9)`; ctx.shadowBlur=14;
+    ctx.beginPath();
+    ctx.moveTo(bx,by+corner);ctx.lineTo(bx,by);ctx.lineTo(bx+corner,by);
+    ctx.moveTo(bx+bw-corner,by);ctx.lineTo(bx+bw,by);ctx.lineTo(bx+bw,by+corner);
+    ctx.moveTo(bx,by+bh-corner);ctx.lineTo(bx,by+bh);ctx.lineTo(bx+corner,by+bh);
+    ctx.moveTo(bx+bw-corner,by+bh);ctx.lineTo(bx+bw,by+bh);ctx.lineTo(bx+bw,by+bh-corner);
+    ctx.stroke(); ctx.restore();
+
+    // El kemikleri: parlak degrade çizgiler
+    const grad=ctx.createLinearGradient(x,y,x+ww,y+hh);
+    grad.addColorStop(0,`rgba(${hue},.45)`); grad.addColorStop(.5,'rgba(225,252,255,.98)'); grad.addColorStop(1,`rgba(${hue},.9)`);
+    ctx.save(); ctx.strokeStyle=grad; ctx.lineWidth=Math.max(2.2,w/430); ctx.lineCap='round'; ctx.shadowColor=`rgba(${hue},.95)`; ctx.shadowBlur=12;
+    for(const [a,b] of HAND_CONNECTIONS){ctx.beginPath();ctx.moveTo(px(a),py(a));ctx.lineTo(px(b),py(b));ctx.stroke();}
+    ctx.restore();
+
+    // Eklemler: dış parlama + merkez noktası
+    for(let i=0;i<pts.length;i++){
+      const xx=px(i), yy=py(i), tip=HAND_TIPS.includes(i), rr=tip?Math.max(5,w/125):Math.max(2.6,w/260);
+      ctx.save(); ctx.shadowColor=`rgba(${hue},1)`; ctx.shadowBlur=tip?22:10;
+      ctx.fillStyle=tip?`rgba(${hue},.25)`:'#d9fbff'; ctx.beginPath();ctx.arc(xx,yy,rr*1.8,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=tip?'#ffffff':`rgba(${hue},1)`;ctx.beginPath();ctx.arc(xx,yy,tip?rr*.62:rr*.48,0,Math.PI*2);ctx.fill();
+      if(tip){ctx.strokeStyle=`rgba(${hue},.9)`;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(xx,yy,rr*(1.25+Math.sin(now*.009+i)*.12),0,Math.PI*2);ctx.stroke();}
+      ctx.restore();
     }
-    const idx=handTrail.findIndex(v=>v.key===key);if(idx>=0)handTrail[idx]=point;else handTrail.push(point);
+
+    // Avuç merkezinde hedef işareti ve küçük bilgi etiketi
+    ctx.save(); ctx.strokeStyle=`rgba(${hue},.95)`;ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.arc(cx,cy,7+Math.sin(now*.008)*2,0,Math.PI*2);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(cx-15,cy);ctx.lineTo(cx-5,cy);ctx.moveTo(cx+5,cy);ctx.lineTo(cx+15,cy);ctx.moveTo(cx,cy-15);ctx.lineTo(cx,cy-5);ctx.moveTo(cx,cy+5);ctx.lineTo(cx,cy+15);ctx.stroke();
+    ctx.font=`bold ${Math.max(10,w/95)}px monospace`;ctx.fillStyle='#bdf6ff';ctx.shadowColor=`rgba(${hue},.9)`;ctx.shadowBlur=8;
+    ctx.fillText(handIndex===0?'JARVIS / HAND 01':'JARVIS / HAND 02',bx,Math.max(16,by-10));ctx.restore();
+
+    // Parmak uçlarından kısa ışık izleri
+    for(const tipIndex of HAND_TIPS){
+      const key=handIndex+'-'+tipIndex, point={key,x:px(tipIndex),y:py(tipIndex),t:now};
+      const old=handTrail.find(v=>v.key===key);
+      if(old){ctx.save();ctx.strokeStyle=`rgba(${hue},.38)`;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(old.x,old.y);ctx.lineTo(point.x,point.y);ctx.stroke();ctx.restore();}
+      const idx=handTrail.findIndex(v=>v.key===key);if(idx>=0)handTrail[idx]=point;else handTrail.push(point);
+    }
   });
-  handTrail=handTrail.filter(p=>now-p.t<240);
-  // Energy bridge when both palms are visible
-  if(handCenters.length>=2){
-    const a=handCenters[0],b=handCenters[1],dx=b.x-a.x,dy=b.y-a.y,dist=Math.hypot(dx,dy);
-    if(dist>20){ctx.save();ctx.globalCompositeOperation='lighter';ctx.strokeStyle=`rgba(${amber},.6)`;ctx.lineWidth=2;ctx.shadowColor=`rgba(${gold},.8)`;ctx.shadowBlur=14;
-      ctx.setLineDash([8,10]);ctx.lineDashOffset=-now*.06;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.setLineDash([]);
-      const midx=(a.x+b.x)/2,midy=(a.y+b.y)/2;
-      ctx.strokeStyle=`rgba(${gold},.4)`;ctx.beginPath();ctx.arc(midx,midy,7+Math.sin(now*.008)*3,0,Math.PI*2);ctx.stroke();ctx.restore();
-    }
-  }
-  // Gesture burst: expanding rings around detected palm, amber only
+  handTrail=handTrail.filter(p=>now-p.t<180);
+
+  // Hareket tanındığında avuçtan yayılan enerji halkası
   const age=now-handFxBurstAt;
-  if(handFxBurstAt&&age<850){const p=handCenters[0];if(p){const progress=age/850;ctx.save();ctx.globalCompositeOperation='lighter';ctx.strokeStyle=`rgba(${gold},${1-progress})`;ctx.lineWidth=2.5*(1-progress)+.5;ctx.shadowColor=`rgba(${amber},.9)`;ctx.shadowBlur=20;ctx.beginPath();ctx.arc(p.x,p.y,18+progress*Math.max(w,h)*.2,0,Math.PI*2);ctx.stroke();ctx.restore();}}
+  if(handFxBurstAt && age<850){
+    const p=hands[0]; if(p){const cx=(1-p[0].x)*w,cy=p[0].y*h,progress=age/850;
+      ctx.save();ctx.strokeStyle=`rgba(115,235,255,${1-progress})`;ctx.lineWidth=3*(1-progress)+.5;ctx.shadowColor='#58e6ff';ctx.shadowBlur=22;
+      ctx.beginPath();ctx.arc(cx,cy,18+progress*Math.max(w,h)*.22,0,Math.PI*2);ctx.stroke();ctx.restore();}
+  }
 }
 function handApplyGesture(name,score){
   if(!name||name==='None'||score<.72) return;
