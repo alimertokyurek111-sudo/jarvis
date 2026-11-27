@@ -791,13 +791,24 @@ canvas#ring{filter:drop-shadow(0 0 5px rgba(63,211,255,.45))}
 
 
 /* ===== JARVIS MULTI-FEATURE HUB ===== */
-.jarvis-feature-hub{grid-column:1/-1;min-width:0;margin-top:2px;padding:18px;background:linear-gradient(150deg,rgba(4,25,42,.94),rgba(3,12,22,.95));}
+.jarvis-feature-hub{display:none;grid-column:1/-1;min-width:0;margin-top:2px;padding:18px;background:linear-gradient(150deg,rgba(4,25,42,.94),rgba(3,12,22,.95));}
 .hub-head{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;border-bottom:1px solid rgba(91,205,255,.15);padding-bottom:13px;margin-bottom:14px}.hub-head h3{margin:0 0 6px;color:#81eaff}.hub-head p,.hub-hint{margin:0;color:#7eabbf;font-size:11px;line-height:1.55}.hub-live{display:flex;align-items:center;gap:7px;color:#7de7bd;font:10px var(--font-hud);letter-spacing:1.2px}.hub-live i{width:7px;height:7px;border-radius:50%;background:#42e6a4;box-shadow:0 0 10px #42e6a4;display:inline-block}
 .hub-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.hub-card{min-width:0;border:1px solid rgba(80,195,240,.17);border-radius:13px;background:linear-gradient(150deg,rgba(7,32,52,.8),rgba(3,15,26,.75));padding:13px}.hub-card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:11px}.hub-card-head h4{font-size:13px;color:#c4efff;margin:0;letter-spacing:.5px}.hub-card-head>span{font:9px var(--font-hud);color:#7eabbf;letter-spacing:1px}.hub-card label{display:block;margin:10px 0 5px;color:#83b2c8;font-size:11px}.hub-card input,.hub-card textarea{width:100%;border:1px solid rgba(82,199,244,.2);border-radius:8px;background:#031321;color:#dff7ff;padding:9px;font:inherit;resize:vertical}.hub-card textarea{font-size:12px}.hub-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.hub-actions .mini-btn{font-size:10px;padding:8px 10px}.system-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.system-metrics>div{border:1px solid rgba(80,195,240,.14);border-radius:9px;padding:10px;background:rgba(1,15,27,.45)}.system-metrics small{display:block;font:9px var(--font-hud);color:#74a6bd;margin-bottom:5px}.system-metrics b{font-size:14px;color:#78e6ff;overflow-wrap:anywhere}.sys-foot{font-size:10px;line-height:1.5;color:#7d9fb3;margin-top:10px}.livecam-stage{position:relative;aspect-ratio:16/9;border-radius:9px;overflow:hidden;border:1px solid rgba(80,195,240,.15);background:#020b14}.livecam-stage video,.livecam-stage canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.livecam-stage video{display:block}.livecam-stage canvas{pointer-events:none}.livecam-placeholder{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#6f9fb6;font-size:11px;padding:20px}.livecam-stage.active .livecam-placeholder{display:none}.studio-shortcuts{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.studio-shortcuts button{font-size:10px;padding:7px 9px;background:rgba(4,30,48,.7);border:1px solid rgba(80,195,240,.15);border-radius:8px;color:#a9eaff;cursor:pointer}.project-saved{margin-top:10px;max-height:140px;overflow:auto;border:1px solid rgba(80,195,240,.12);border-radius:8px;padding:9px;color:#8cb7c9;font-size:11px;white-space:pre-wrap}.task-create{display:flex;gap:6px}.task-create input{flex:1;min-width:0}.task-list{display:grid;gap:6px;margin-top:10px;max-height:220px;overflow:auto}.task-row{display:flex;align-items:center;gap:8px;padding:8px;border:1px solid rgba(80,195,240,.13);border-radius:8px;background:rgba(2,15,27,.5);font-size:11px}.task-row span{flex:1;overflow-wrap:anywhere}.task-row.done span{text-decoration:line-through;color:#7193a4}.task-row button{border:0;background:transparent;color:#ff8293;cursor:pointer}.task-row input{width:auto;accent-color:#43d8ff}.task-row small{color:#7aa7bd}
 @media(max-width:980px){.jarvis-feature-hub{grid-column:1/-1}.hub-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:620px){.hub-grid{grid-template-columns:1fr}.hub-head{align-items:flex-start}.hub-card{padding:11px}.hub-card-head{align-items:flex-start}.hub-actions .mini-btn{flex:1}}
 
 
+/* JARVIS 4.0 - feature pages: modules open individually, never stacked on home */
+body.jarvis-module-view main > :not(#jarvisHub){display:none!important}
+body.jarvis-module-view #jarvisHub{display:block!important;grid-column:1/-1;min-height:calc(100vh - 150px)}
+body.jarvis-module-view #jarvisHub .hub-head{display:none}
+body.jarvis-module-view #jarvisHub .hub-grid{display:block}
+body.jarvis-module-view #jarvisHub .hub-card{display:none}
+body.jarvis-module-view #jarvisHub .hub-card.feature-active{display:block;max-width:1050px;margin:0 auto;min-height:360px;padding:22px}
+.gaze-cal-target{position:absolute;z-index:5;left:50%;top:50%;transform:translate(-50%,-50%);color:#8ff5ff;font-size:36px;font-weight:300;text-shadow:0 0 14px #42dfff;pointer-events:none}
+.gaze-cal-target:after{content:"";position:absolute;inset:-12px;border:1px solid #65eaff;border-radius:50%;box-shadow:0 0 16px #35cfff66}
+.gaze-stage video{transform:scaleX(-1)}
+.gaze-stage canvas{transform:none}
 /* JARVIS 4.0 - hologram, gaze, audio, home, science and space modules */
 .jarvis-new-card{position:relative;overflow:hidden}
 .jarvis-new-card:before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 0%,rgba(61,205,255,.09),transparent 65%)}
@@ -872,7 +883,16 @@ canvas#ring{filter:drop-shadow(0 0 5px rgba(63,211,255,.45))}
     <a class="nav-link" href="atom.html">⚛️ <span>JARVIS ATOM LAB</span></a>
     <div class="sidebar-divider"></div>
     <a class="nav-link" href="#genelPanel">▤ <span>Panel ve Haberler</span></a>
-    <a class="nav-link" href="#jarvisHub">🧠 <span>Gelişmiş Merkez</span></a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-caption">JARVIS MODÜLLERİ</div>
+    <a class="nav-link jarvis-module-link" href="#modul-holo" data-module="holo">🌀 <span>3D Hologram</span></a>
+    <a class="nav-link jarvis-module-link" href="#modul-gaze" data-module="gaze">👁️ <span>Göz Takibi</span></a>
+    <a class="nav-link jarvis-module-link" href="#modul-audio" data-module="audio">🎙️ <span>Ses Spektrumu</span></a>
+    <a class="nav-link jarvis-module-link" href="#modul-home" data-module="home">🏠 <span>Akıllı Ev Simülasyonu</span></a>
+    <a class="nav-link jarvis-module-link" href="#modul-pc" data-module="pc">🖥️ <span>Bilgisayar Kontrolü</span></a>
+    <a class="nav-link jarvis-module-link" href="#modul-science" data-module="science">⚛️ <span>Bilim Laboratuvarı</span></a>
+    <a class="nav-link jarvis-module-link" href="#modul-space" data-module="space">🪐 <span>Uzay Gözlem</span></a>
+    <a class="nav-link" href="#elKontrol" id="handModuleNav">✋ <span>El Kontrolü</span></a>
     <div class="sidebar-note">Daha iyi bir gelecek,<br>daha iyi sorularla başlar.<br><small>— JARVIS</small></div>
   </aside>
 
@@ -969,25 +989,25 @@ canvas#ring{filter:drop-shadow(0 0 5px rgba(63,211,255,.45))}
     <section class="panel jarvis-feature-hub" id="jarvisHub">
       <div class="hub-head"><div><h3>🧠 JARVIS GELİŞMİŞ MERKEZ</h3><p>Hologram · El ve göz kontrolü · Ses · Akıllı ev · Bilim · Uzay</p></div><span class="hub-live"><i></i> MODÜLLER AKTİF</span></div>
       <div class="hub-grid">
-        <section class="hub-card jarvis-new-card">
+        <section class="hub-card jarvis-new-card" id="modul-holo">
           <div class="hub-card-head"><h4>🌀 3D Hologram Masası</h4><span>HOLO CORE</span></div>
           <div class="holo-stage" id="holoStage"><canvas id="holoCanvas"></canvas></div>
           <div class="module-row"><button class="module-btn" id="holoRotate">DÖNDÜR</button><button class="module-btn" id="holoPulse">ENERJİ DARBESİ</button><button class="module-btn" id="holoHand">EL KONTROLÜNÜ AÇ</button></div>
           <div class="module-status" id="holoStatus">3D çekirdek hazırlanıyor...</div>
         </section>
-        <section class="hub-card jarvis-new-card">
+        <section class="hub-card jarvis-new-card" id="modul-gaze">
           <div class="hub-card-head"><h4>👁️ Göz Takibi</h4><span id="gazeState">KAPALI</span></div>
-          <div class="gaze-stage"><video id="gazeVideo" autoplay playsinline muted></video><canvas id="gazeCanvas"></canvas></div>
-          <div class="module-row"><button class="module-btn" id="gazeStart">GÖZ TAKİBİNİ BAŞLAT</button><button class="module-btn" id="gazeStop" disabled>DURDUR</button></div>
-          <div class="module-status" id="gazeStatus">Kamera izni yalnızca başlatınca istenir. Bakış noktası bu panelde gösterilir.</div>
+          <div class="gaze-stage" id="gazeStage"><video id="gazeVideo" autoplay playsinline muted></video><canvas id="gazeCanvas"></canvas><div class="gaze-cal-target" id="gazeCalTarget" hidden>＋</div></div>
+          <div class="module-row"><button class="module-btn" id="gazeStart">KAMERAYI AÇ</button><button class="module-btn" id="gazeCalibrate" disabled>KALİBRASYONU BAŞLAT</button><button class="module-btn" id="gazeSavePoint" disabled>NOKTAYI KAYDET</button><button class="module-btn" id="gazeStop" disabled>DURDUR</button></div>
+          <div class="module-status" id="gazeStatus">Önce kamerayı aç. Doğru bakış tahmini için 5 noktalı kalibrasyon gerekir.</div>
         </section>
-        <section class="hub-card jarvis-new-card">
+        <section class="hub-card jarvis-new-card" id="modul-audio">
           <div class="hub-card-head"><h4>🎙️ Canlı Ses Spektrumu</h4><span id="audioState">BEKLEMEDE</span></div>
           <canvas class="audio-stage" id="audioCanvas" width="640" height="180"></canvas>
           <div class="module-row"><button class="module-btn" id="audioStart">MİKROFONU AÇ</button><button class="module-btn" id="audioStop" disabled>DURDUR</button></div>
           <div class="module-status" id="audioStatus">Ses yalnızca cihazında görselleştirilir; kaydedilmez veya gönderilmez.</div>
         </section>
-        <section class="hub-card jarvis-new-card">
+        <section class="hub-card jarvis-new-card" id="modul-home">
           <div class="hub-card-head"><h4>🏠 Akıllı Ev Simülasyonu</h4><span>DEMO MODU</span></div>
           <div class="home-grid" id="homeGrid">
             <div class="home-device" data-device="Salon ışığı"><b>💡 Salon ışığı</b><button class="home-switch">KAPALI</button></div>
@@ -997,7 +1017,7 @@ canvas#ring{filter:drop-shadow(0 0 5px rgba(63,211,255,.45))}
           </div>
           <div class="module-status" id="homeStatus">Bunlar sanal cihazlardır; gerçek ev cihazlarına bağlı değildir.</div>
         </section>
-        <section class="hub-card jarvis-new-card">
+        <section class="hub-card jarvis-new-card" id="modul-pc">
           <div class="hub-card-head"><h4>🖥️ Bilgisayar Kontrol Merkezi</h4><span>BROWSER CONTROL</span></div>
           <div class="system-metrics">
             <div><small>İŞLETİM ORTAMI</small><b id="pcPlatform">—</b></div><div><small>TARAYICI</small><b id="pcBrowser">—</b></div>
@@ -1006,13 +1026,13 @@ canvas#ring{filter:drop-shadow(0 0 5px rgba(63,211,255,.45))}
           <div class="module-row"><button class="module-btn" id="pcFullscreen">TAM EKRAN</button><button class="module-btn" id="pcExitFullscreen">TAM EKRANDAN ÇIK</button><button class="module-btn" id="pcOpenHand">EL KONTROLÜ</button></div>
           <div class="module-status" id="pcStatus">Tarayıcı içinde çalışır. Windows uygulamalarına veya tüm masaüstüne doğrudan erişmez.</div>
         </section>
-        <section class="hub-card jarvis-new-card">
+        <section class="hub-card jarvis-new-card" id="modul-science">
           <div class="hub-card-head"><h4>⚛️ 3D Bilim Laboratuvarı</h4><span>ATOM LAB</span></div>
           <div class="three-stage" id="scienceStage"><canvas id="scienceCanvas"></canvas></div>
           <div class="module-row"><select class="module-select" id="atomSelect"><option value="H">Hidrojen (H)</option><option value="He">Helyum (He)</option><option value="C" selected>Karbon (C)</option><option value="O">Oksijen (O)</option><option value="Na">Sodyum (Na)</option></select><button class="module-btn" id="atomReset">MODELİ YENİLE</button></div>
           <div class="lab-readout" id="atomReadout">Karbon · 6 proton · 6 elektron · Basitleştirilmiş Bohr modeli</div>
         </section>
-        <section class="hub-card jarvis-new-card">
+        <section class="hub-card jarvis-new-card" id="modul-space">
           <div class="hub-card-head"><h4>🪐 3D Uzay Gözlem Merkezi</h4><span>SPACE OBSERVER</span></div>
           <div class="three-stage" id="spaceStage"><canvas id="spaceCanvas"></canvas></div>
           <div class="module-row"><select class="module-select" id="planetSelect"><option value="mercury">Merkür</option><option value="venus">Venüs</option><option value="earth" selected>Dünya</option><option value="mars">Mars</option><option value="jupiter">Jüpiter</option><option value="saturn">Satürn</option><option value="uranus">Uranüs</option><option value="neptune">Neptün</option></select><button class="module-btn" id="spacePause">DURAKLAT</button></div>
@@ -2880,6 +2900,11 @@ drawRing();
 // ===== JARVIS MULTI-FEATURE HUB =====
 (()=>{
   const q=id=>document.getElementById(id);
+  const moduleCards={holo:'modul-holo',gaze:'modul-gaze',audio:'modul-audio',home:'modul-home',pc:'modul-pc',science:'modul-science',space:'modul-space'};
+  function openModule(name){document.body.classList.add('jarvis-module-view');document.querySelectorAll('#jarvisHub .hub-card').forEach(c=>c.classList.remove('feature-active'));const id=moduleCards[name];if(id)q(id)?.classList.add('feature-active');document.querySelectorAll('.jarvis-module-link').forEach(a=>a.classList.toggle('active',a.dataset.module===name));document.querySelectorAll('.jarvis-sidebar .nav-link').forEach(a=>{if(!a.classList.contains('jarvis-module-link')&&a.id!=='handModuleNav'&&a.getAttribute('href')==='#anaSohbet')a.classList.remove('active')});q('jarvisHub')?.scrollIntoView({behavior:'smooth',block:'start'});}
+  document.querySelectorAll('.jarvis-module-link').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();openModule(a.dataset.module)}));
+  document.querySelector('.nav-link[href="#anaSohbet"]')?.addEventListener('click',e=>{e.preventDefault();document.body.classList.remove('jarvis-module-view');document.querySelectorAll('.nav-link').forEach(a=>a.classList.remove('active'));e.currentTarget.classList.add('active');document.getElementById('anaSohbet')?.scrollIntoView({behavior:'smooth',block:'center'})});
+  q('handModuleNav')?.addEventListener('click',e=>{e.preventDefault();document.body.classList.remove('jarvis-module-view');document.querySelectorAll('.nav-link').forEach(a=>a.classList.remove('active'));e.currentTarget.classList.add('active');q('handOpenBtn')?.click()});
   const safeText=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   // System status: only browser-readable data are shown.
   const started=Date.now();function sysUpdate(){q('sysConnection').textContent=navigator.onLine?'ÇEVRİMİÇİ':'ÇEVRİMDIŞI';q('sysScreen').textContent=screen.width+' × '+screen.height;q('sysUptime').textContent=Math.floor((Date.now()-started)/1000)+' sn';if(navigator.storage?.estimate){navigator.storage.estimate().then(v=>q('sysStorage').textContent=v.quota?Math.round(v.usage/1024/1024)+' / '+Math.round(v.quota/1024/1024)+' MB':'—').catch(()=>q('sysStorage').textContent='—')}q('sysUpdated').textContent='Güncellendi: '+new Date().toLocaleTimeString('tr-TR')};sysUpdate();setInterval(sysUpdate,5000);window.addEventListener('online',sysUpdate);window.addEventListener('offline',sysUpdate);
@@ -2902,10 +2927,36 @@ drawRing();
   q('holoRotate')?.addEventListener('click',()=>{holoSpin=!holoSpin;q('holoStatus').textContent=holoSpin?'DÖNÜŞ AKTİF':'DÖNÜŞ DURAKLATILDI'});
   q('holoPulse')?.addEventListener('click',()=>{if(!holoCore)return;holoCore.scale.setScalar(1.18);setTimeout(()=>holoCore?.scale.setScalar(1),260);q('holoStatus').textContent='ENERJİ DARBESİ GÖNDERİLDİ'});
   q('holoHand')?.addEventListener('click',()=>q('handOpenBtn')?.click());
-  // Eye tracking: approximate gaze cursor from face/iris landmarks; never controls the OS cursor.
-  let gazeStream=null,gazeRunning=false,gazeDetector=null;const gazeVideo=q('gazeVideo'),gazeCanvas=q('gazeCanvas'),gazeCtx=gazeCanvas.getContext('2d');
-  async function gazeStop(){gazeRunning=false;gazeStream?.getTracks().forEach(t=>t.stop());gazeStream=null;gazeVideo.srcObject=null;q('gazeStart').disabled=false;q('gazeStop').disabled=true;q('gazeState').textContent='KAPALI';q('gazeStatus').textContent='Göz takibi durduruldu.';gazeCtx.clearRect(0,0,gazeCanvas.width,gazeCanvas.height)}
-  q('gazeStart')?.addEventListener('click',async()=>{try{q('gazeStatus').textContent='Kamera ve yüz modeli hazırlanıyor...';gazeStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});gazeVideo.srcObject=gazeStream;await gazeVideo.play();const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.3/vision_bundle.mjs');const fs=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.3/wasm');const faceOptions={baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',delegate:'GPU'},runningMode:'VIDEO',numFaces:1};try{gazeDetector=await vision.FaceLandmarker.createFromOptions(fs,faceOptions)}catch(gpuErr){faceOptions.baseOptions.delegate='CPU';gazeDetector=await vision.FaceLandmarker.createFromOptions(fs,faceOptions)}gazeRunning=true;q('gazeStart').disabled=true;q('gazeStop').disabled=false;q('gazeState').textContent='AKTİF';const loop=()=>{if(!gazeRunning)return;if(gazeVideo.readyState>=2){gazeCanvas.width=gazeVideo.videoWidth;gazeCanvas.height=gazeVideo.videoHeight;gazeCtx.clearRect(0,0,gazeCanvas.width,gazeCanvas.height);const res=gazeDetector.detectForVideo(gazeVideo,performance.now());if(res.faceLandmarks?.length){const pts=res.faceLandmarks[0],eye=pts[473]||pts[468];const x=(1-eye.x)*gazeCanvas.width,y=eye.y*gazeCanvas.height;gazeCtx.strokeStyle='#62eaff';gazeCtx.lineWidth=3;gazeCtx.beginPath();gazeCtx.arc(x,y,18,0,Math.PI*2);gazeCtx.stroke();gazeCtx.beginPath();gazeCtx.moveTo(x-28,y);gazeCtx.lineTo(x+28,y);gazeCtx.moveTo(x,y-28);gazeCtx.lineTo(x,y+28);gazeCtx.stroke();q('gazeStatus').textContent='Yüz algılandı · Bakış işaretçisi aktif';}else q('gazeStatus').textContent='Yüz aranıyor...';}requestAnimationFrame(loop)};loop();}catch(e){q('gazeStatus').textContent='Başlatılamadı: '+e.message;await gazeStop()}});
+  // Calibrated webcam gaze estimate. This is an in-page estimate, not OS cursor control.
+  let gazeStream=null,gazeRunning=false,gazeDetector=null,gazeFrame=0,gazeFeatures=[],gazeSamples=[],gazeCalIndex=0,gazeCalibrating=false,gazeModel=null;
+  const gazeVideo=q('gazeVideo'),gazeCanvas=q('gazeCanvas'),gazeCtx=gazeCanvas.getContext('2d'),gazeTarget=q('gazeCalTarget');
+  const gazeTargets=[[.12,.14],[.88,.14],[.5,.5],[.12,.86],[.88,.86]];
+  function gazeFeature(pts){
+    const eye=(iris,outer,inner,top,bottom)=>{
+      const a=pts[outer],b=pts[inner],c=pts[iris],u=pts[top],d=pts[bottom];
+      const dx=b.x-a.x,dy=b.y-a.y,den=dx*dx+dy*dy||1e-6;
+      const x=((c.x-a.x)*dx+(c.y-a.y)*dy)/den;
+      const y=(c.y-(u.y+d.y)/2)/Math.max(.008,Math.abs(u.y-d.y));
+      return [x,y];
+    };
+    const l=eye(468,33,133,159,145),r=eye(473,362,263,386,374);
+    return [1,(l[0]+r[0])/2,(l[1]+r[1])/2];
+  }
+  function gazeSolve3(A,b){
+    const m=A.map((row,i)=>[...row,b[i]]);
+    for(let i=0;i<3;i++){let p=i;for(let j=i+1;j<3;j++)if(Math.abs(m[j][i])>Math.abs(m[p][i]))p=j;[m[i],m[p]]=[m[p],m[i]];if(Math.abs(m[i][i])<1e-9)return null;const d=m[i][i];for(let k=i;k<4;k++)m[i][k]/=d;for(let j=0;j<3;j++)if(j!==i){const f=m[j][i];for(let k=i;k<4;k++)m[j][k]-=f*m[i][k]}}return m.map(row=>row[3]);
+  }
+  function gazeFit(){
+    if(gazeSamples.length<5)return false;const X=Array.from({length:3},()=>Array(3).fill(0)),bx=Array(3).fill(0),by=Array(3).fill(0);
+    gazeSamples.forEach(s=>{for(let i=0;i<3;i++){for(let j=0;j<3;j++)X[i][j]+=s.f[i]*s.f[j];bx[i]+=s.f[i]*s.x;by[i]+=s.f[i]*s.y}});
+    const cx=gazeSolve3(X,bx),cy=gazeSolve3(X,by);if(!cx||!cy)return false;gazeModel={x:cx,y:cy};localStorage.setItem('jarvis-gaze-model',JSON.stringify(gazeModel));return true;
+  }
+  try{gazeModel=JSON.parse(localStorage.getItem('jarvis-gaze-model')||'null')}catch{gazeModel=null}
+  function gazeDrawTarget(){const t=gazeTargets[gazeCalIndex];gazeTarget.hidden=!gazeCalibrating;if(!gazeCalibrating)return;gazeTarget.style.left=(t[0]*100)+'%';gazeTarget.style.top=(t[1]*100)+'%';}
+  async function gazeStop(){gazeRunning=false;cancelAnimationFrame(gazeFrame);gazeStream?.getTracks().forEach(t=>t.stop());gazeStream=null;gazeVideo.srcObject=null;q('gazeStart').disabled=false;q('gazeCalibrate').disabled=true;q('gazeSavePoint').disabled=true;q('gazeStop').disabled=true;q('gazeState').textContent='KAPALI';q('gazeStatus').textContent='Göz takibi durduruldu.';gazeTarget.hidden=true;gazeCtx.clearRect(0,0,gazeCanvas.width,gazeCanvas.height)}
+  q('gazeStart')?.addEventListener('click',async()=>{try{q('gazeStatus').textContent='Kamera ve yüz modeli hazırlanıyor...';gazeStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:false});gazeVideo.srcObject=gazeStream;await gazeVideo.play();const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.3/vision_bundle.mjs');const fs=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.3/wasm');const faceOptions={baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',delegate:'GPU'},runningMode:'VIDEO',numFaces:1};try{gazeDetector=await vision.FaceLandmarker.createFromOptions(fs,faceOptions)}catch(gpuErr){faceOptions.baseOptions.delegate='CPU';gazeDetector=await vision.FaceLandmarker.createFromOptions(fs,faceOptions)}gazeRunning=true;q('gazeStart').disabled=true;q('gazeCalibrate').disabled=false;q('gazeStop').disabled=false;q('gazeState').textContent='KAMERA AÇIK';const loop=()=>{if(!gazeRunning)return;if(gazeVideo.readyState>=2){if(gazeCanvas.width!==gazeVideo.videoWidth||gazeCanvas.height!==gazeVideo.videoHeight){gazeCanvas.width=gazeVideo.videoWidth;gazeCanvas.height=gazeVideo.videoHeight}gazeCtx.clearRect(0,0,gazeCanvas.width,gazeCanvas.height);const res=gazeDetector.detectForVideo(gazeVideo,performance.now());if(res.faceLandmarks?.length){const f=gazeFeature(res.faceLandmarks[0]);gazeFeatures.push(f);if(gazeFeatures.length>20)gazeFeatures.shift();let x=.5,y=.5;if(gazeModel){x=gazeModel.x.reduce((a,c,i)=>a+c*f[i],0);y=gazeModel.y.reduce((a,c,i)=>a+c*f[i],0)}else{const eye=res.faceLandmarks[0][473]||res.faceLandmarks[0][468];x=1-eye.x;y=eye.y}x=Math.max(.02,Math.min(.98,x));y=Math.max(.02,Math.min(.98,y));const px=x*gazeCanvas.width,py=y*gazeCanvas.height;gazeCtx.strokeStyle=gazeModel?'#62eaff':'#ffca72';gazeCtx.lineWidth=3;gazeCtx.beginPath();gazeCtx.arc(px,py,14,0,Math.PI*2);gazeCtx.stroke();gazeCtx.beginPath();gazeCtx.moveTo(px-24,py);gazeCtx.lineTo(px+24,py);gazeCtx.moveTo(px,py-24);gazeCtx.lineTo(px,py+24);gazeCtx.stroke();q('gazeStatus').textContent=gazeModel?'Kalibre edilmiş tahmini bakış noktası · Hassasiyet ışık ve kameraya bağlı':'Yüz algılandı · Daha doğru sonuç için kalibrasyon yap';}else{gazeFeatures=[];q('gazeStatus').textContent='Yüz aranıyor · Kameraya doğru bak ve yüzünü kadrajda tut'}}gazeFrame=requestAnimationFrame(loop)};loop();}catch(e){q('gazeStatus').textContent='Başlatılamadı: '+e.message;await gazeStop()}});
+  q('gazeCalibrate')?.addEventListener('click',()=>{gazeSamples=[];gazeCalIndex=0;gazeCalibrating=true;q('gazeSavePoint').disabled=false;q('gazeState').textContent='KALİBRASYON';gazeDrawTarget();q('gazeStatus').textContent='Artı işaretine bak, başını sabit tut ve NOKTAYI KAYDET düğmesine bas. 5 nokta kaydedilecek.'});
+  q('gazeSavePoint')?.addEventListener('click',()=>{if(!gazeCalibrating)return;if(gazeFeatures.length<5){q('gazeStatus').textContent='Henüz yeterli göz verisi yok. Kameraya bakıp tekrar dene.';return}const f=[0,1,2].map(i=>gazeFeatures.reduce((a,v)=>a+v[i],0)/gazeFeatures.length),t=gazeTargets[gazeCalIndex];gazeSamples.push({f,x:t[0],y:t[1]});gazeCalIndex++;if(gazeCalIndex<gazeTargets.length){gazeDrawTarget();q('gazeStatus').textContent='Nokta kaydedildi ('+gazeCalIndex+'/5). Yeni artı işaretine bak ve kaydet.'}else{gazeCalibrating=false;gazeTarget.hidden=true;q('gazeSavePoint').disabled=true;if(gazeFit()){q('gazeState').textContent='KALİBRE';q('gazeStatus').textContent='Kalibrasyon tamamlandı. Bakış tahmini artık kişisel ölçümüne göre ayarlandı.'}else{q('gazeState').textContent='HATA';q('gazeStatus').textContent='Kalibrasyon hesaplanamadı. Işığı artırıp tekrar dene.'}}});
   q('gazeStop')?.addEventListener('click',gazeStop);
   // Microphone spectrum visualization stays on-device and is never recorded.
   let audioStream=null,audioContext=null,audioFrame=0;const audioCanvas=q('audioCanvas'),actx=audioCanvas.getContext('2d');
